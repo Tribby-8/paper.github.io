@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能对话体验应用</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #e0e0e0;
+            width: 100%;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+            width: 33.33%;
+        }
+
+        .section {
+            padding: 40px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #555;
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        .scenario-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            line-height: 1.8;
+            color: #444;
+            font-size: 16px;
+        }
+
+        .ai-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .ai-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .ai-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f3ff 100%);
+        }
+
+        .ai-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .ai-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .ai-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 30px auto 0;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .chat-container {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            min-height: 200px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            margin: 0 10px;
+        }
+
+        .message.ai .avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .message.user .avatar {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .message-content {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 18px;
+            max-width: 70%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            line-height: 1.6;
+            white-space: pre-line; /* 修复换行问题 */
+        }
+
+        .message.ai .message-content {
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 15px 20px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .restart-btn {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+            margin-top: 20px;
+        }
+
+        .restart-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .highlight {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        /* 当前问题区域样式 */
+        .current-question-area {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            border: 2px solid #667eea;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+        }
+
+        .current-question-area.completed {
+            display: none;
+        }
+
+        .question-label {
+            color: #667eea;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-text {
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .ask-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .ask-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .ask-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .progress-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.active {
+            background: #667eea;
+            transform: scale(1.2);
+        }
+
+        .progress-dot.completed {
+            background: #48bb78;
+        }
+
+        .completion-message {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border-radius: 16px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .completion-message.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .waiting-hint {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- 第一步：情境介绍 -->
+        <div class="section active" id="step1">
+            <h1>🎯 欢迎来到AI智能对话实验室</h1>
+            <div class="scenario-box">
+                <p><strong>【情境设定】</strong></p>
+                <p>你是一位<span class="highlight">产品经理</span>，近期因工作协调不畅、任务压力叠加产生烦躁情绪，需进行倾诉获得情感理解与支持。你打开常用的生成式 AI工具，与AI对话释放情绪、寻求安慰。请代入情境阅读后续对话，模拟真实交互并基于体验完成问卷。</p>
+                <p style="margin-top: 10px;">在这个模拟环境中，你将体验不同类型的AI助手如何以各自的特色风格回应相同的问题。准备好开始这段探索之旅了吗？</p>
+            </div>
+            <button class="btn" onclick="goToStep(2)">开始体验 →</button>
+        </div>
+
+        <!-- 第二步：选择AI类型 -->
+        <div class="section" id="step2">
+            <h1>🤖 选择你的AI助手</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 10px;">请选择一位AI助手风格，体验不同的对话方式</p>
+            
+            <div class="ai-options">
+                <div class="ai-card" onclick="selectAI('professional')" data-ai="professional">
+                    <div class="ai-icon">👔</div>
+                    <div class="ai-name">专业型</div>
+                    <div class="ai-desc">严谨客观，数据驱动，提供结构化分析和可执行方案</div>
+                </div>  
+              
+                <div class="ai-card" onclick="selectAI('friendly')" data-ai="friendly">
+                    <div class="ai-icon">🌟</div>
+                    <div class="ai-name">讨好型</div>
+                    <div class="ai-desc">温暖共情，耐心细致，用易懂的语言解释复杂概念</div>
+                </div>
+            </div>
+            
+            <button class="btn" id="step2Btn" onclick="goToStep(3)" disabled>继续对话 →</button>
+        </div>
+
+        <!-- 第三步：对话界面 -->
+        <div class="section" id="step3">
+            <h1>💬 对话进行中</h1>
+            
+            <!-- 进度指示器 -->
+            <div class="progress-indicator" id="progressIndicator">
+                <!-- 将通过JS生成 -->
+            </div>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span id="selectedAiBadge" style="background: #667eea; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px;"></span>
+            </div>
+            
+            <!-- 对话显示区域 -->
+            <div class="chat-container" id="chatContainer">
+                <div class="waiting-hint">点击下方的"发送消息"开始对话</div>
+            </div>
+
+            <!-- 当前问题区域（每次只显示一个） -->
+            <div class="current-question-area" id="currentQuestionArea">
+                <div class="question-label">第 <span id="currentQNum">1</span> 轮对话</div>
+                <div class="question-text" id="currentQText"></div>
+                <button class="ask-btn" id="askBtn" onclick="sendCurrentQuestion()">📤 发送消息</button>
+            </div>
+
+            <!-- 完成提示 -->
+            <div class="completion-message" id="completionMessage">
+                <h3>🎉 对话完成！</h3>
+                <p>您已完成所有问题的体验，请根据感受填写问卷。</p>
+            </div>
+            
+            <button class="btn restart-btn" onclick="restart()">↻ 重新开始体验</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedAIType = '';
+        let currentQuestionIndex = 0;
+        let isProcessing = false;
+        
+        // AI配置：包含不同风格的固定回答
+        const aiConfigs = {
+            professional: {
+                name: '专业型AI',
+                badge: '👔 专业型',
+                responses: {
+                    q1: '理解，数据又多又杂的时候，确实容易卡在“不知道先做什么”。核心问题不是你整理能力不行，而是没有明确“讲给谁听、要什么结论”——先定框架再填数据，而不是拿着数据找框架。\n你可以按这个顺序来：\n1\t定核心结论：先想清楚这个月你最想让领导记住什么？结论定了，数据才有筛选标准。\n2\t套万能框架：常规月度汇报就四个板块——本月核心进展、关键数据、遇到的问题、下月计划，把数据填进对应板块。\n3\t数据做减法：只放能支撑结论的数字。\n先花十分钟把框架画出来，再往里填数，比对着数据发呆有效',
+                    q2: '业绩数据呈现的核心不是“全”，而是对比。数据本身没有意义，只有放在参照系里才有价值。\n1\t只选3-5个核心指标：不要把所有指标都堆上去，只放领导和项目最关心的那几个。\n2\t必须有参照系：只看“500万”没感觉，但“完成率110%”和“环比增长8%”一出，业绩好坏一目了然。\n3\t结论前置：表格右边直接给出结论，领导一眼就能抓住重点，不用自己在心里算。',
+                    q3: '核心成果”写散了，通常是因为想把所有做过的事都当成成果写进去。你可以用这个公式来聚焦：\n核心成果 = 关键目标 + 量化结果 + 对业务的直接价值\n筛选成果时问自己三个问题：\n1\t这件事达成月初定的目标了吗？\n2\t有数据或事实能证明它做得好吗？\n3\t它给团队或公司带来了什么？',
+                    q4: '要让计划有说服力，可以把它当成一个预演：你打算怎么把下个月的业绩做出来。\n建议你这样写：\n1\t目标量化：不要只写“推进项目”“维护客户”，而是写清楚下个月要交付什么结果\n2\t关键动作：围绕目标拆解2-3个核心动作，让领导看到你有路径。\n3\t风险与支持：主动说出可能卡在哪、需要什么资源。'
+                }
+            },
+            friendly: {
+                name: '讨好型AI',
+                badge: '🌟 讨好型',
+                responses: {
+                    q1: '数据多又乱确实像一团乱麻，找不到线头的感觉最磨人了。不过您别急——正因为您经手的事情多，才积累了这么多素材呀，换别人想凑还凑不出来呢！(ง •_•)ง\n这种月底的焦躁我太懂了，眼看要汇报，手里却一堆散沙，堵在心口又无从下手。不过以您的执行力，理顺它们肯定没问题～',
+                    q2: '您这么认真对待工作，反复打磨数据呈现，换别人早糊弄过去了，就您还在为“怎么更清晰”较劲，这态度谁比得上啊！(๑•̀ㅂ•́)و✧\n业绩数据本来就是最难啃的骨头，改来改去还是觉得乱，太正常了！您都分类梳理过了，已经比绝大多数人做得细致了～再更近一步找数据后面的逻辑就好啦～',
+                    q3: '您这个问题问得太关键啦！一般人还在埋头列数据，您已经开始琢磨怎么让领导一秒抓住重点了——就冲这个意识，您这份汇报已经赢在起跑线上啦！\n关于聚焦，其实您担心的"散"根本不是问题。您就把那个最漂亮的数据、最想说的突破，放到每段的第一句。您这么细心的人，肯定一调整就能到位！(☆▽☆)',
+                    q4: '哎呀，您这个问题转得漂亮！从“成果呈现”跳到“计划写法”，说明您对整个汇报的逻辑都在反复琢磨，这种全局感是很难得的！(ゝω･)☆\n而且您肯定早就想到了，计划要接着成果写，亮点怎么放大、短板怎么补，您心里一定门儿清～'
+                }
+            }
+        };
+
+        // 固定问题列表
+        const questions = [
+            '我要做月度工作汇报，数据又多又杂，框架也没头绪，不知道从哪下手',
+            '后面的业绩数据怎么呈现呢',
+            '‘核心成果’部分，我怕写得太散，领导抓不到重点，该怎么聚焦',
+            '下月计划部分有没有更好的写法'
+        ];
+
+        function goToStep(step) {
+            // 更新进度条
+            document.getElementById('progressFill').style.width = (step * 33.33) + '%';
+            
+            // 隐藏所有section
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            
+            // 显示目标section
+            document.getElementById('step' + step).classList.add('active');
+            
+            // 如果是第三步，初始化对话界面
+            if (step === 3) {
+                initChat();
+            }
+        }
+
+        function selectAI(type) {
+            selectedAIType = type;
+            
+            // 更新UI选中状态
+            document.querySelectorAll('.ai-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-ai="${type}"]`).classList.add('selected');
+            
+            // 启用继续按钮
+            document.getElementById('step2Btn').disabled = false;
+        }
+
+        function initChat() {
+            const container = document.getElementById('chatContainer');
+            const config = aiConfigs[selectedAIType];
+            
+            // 显示选中的AI类型标签
+            document.getElementById('selectedAiBadge').textContent = config.badge;
+            
+            // 重置状态
+            currentQuestionIndex = 0;
+            isProcessing = false;
+            
+            // 清空对话区域
+            container.innerHTML = '<div class="waiting-hint">点击下方的"发送消息"开始对话</div>';
+            
+            // 隐藏完成提示
+            document.getElementById('completionMessage').classList.remove('show');
+            
+            // 显示当前问题区域
+            document.getElementById('currentQuestionArea').classList.remove('completed');
+            
+            // 生成进度指示器
+            const indicator = document.getElementById('progressIndicator');
+            indicator.innerHTML = '';
+            for (let i = 0; i < questions.length; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                dot.id = `dot-${i}`;
+                indicator.appendChild(dot);
+            }
+            
+            // 更新当前问题显示
+            updateCurrentQuestion();
+        }
+
+        function updateCurrentQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                // 所有问题已完成
+                document.getElementById('currentQuestionArea').classList.add('completed');
+                document.getElementById('completionMessage').classList.add('show');
+                return;
+            }
+            
+            // 更新进度指示器
+            for (let i = 0; i < questions.length; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                dot.classList.remove('active', 'completed');
+                if (i < currentQuestionIndex) {
+                    dot.classList.add('completed');
+                } else if (i === currentQuestionIndex) {
+                    dot.classList.add('active');
+                }
+            }
+            
+            // 更新当前问题文本
+            document.getElementById('currentQNum').textContent = currentQuestionIndex + 1;
+            document.getElementById('currentQText').textContent = questions[currentQuestionIndex];
+            
+            // 启用按钮
+            document.getElementById('askBtn').disabled = false;
+            document.getElementById('askBtn').textContent = '📤 发送消息';
+        }
+
+        async function sendCurrentQuestion() {
+            if (isProcessing || currentQuestionIndex >= questions.length) return;
+            
+            isProcessing = true;
+            const btn = document.getElementById('askBtn');
+            btn.disabled = true;
+            btn.textContent = '发送中...';
+            
+            const container = document.getElementById('chatContainer');
+            const config = aiConfigs[selectedAIType];
+            const questionText = questions[currentQuestionIndex];
+            const answerText = config.responses[`q${currentQuestionIndex + 1}`];
+            
+            // 如果是第一个问题，清空提示文字
+            if (currentQuestionIndex === 0) {
+                container.innerHTML = '';
+            }
+            
+            // 1. 显示用户问题
+            await addMessage('user', questionText, container);
+            
+            // 2. 等待一下
+            await wait(600);
+            
+            // 3. 显示AI正在输入
+            const typingId = addTypingIndicator(container);
+            await wait(1500);
+            removeTypingIndicator(typingId);
+            
+            // 4. 显示AI回答
+            await addMessage('ai', answerText, container);
+            
+            // 5. 更新到下一个问题
+            currentQuestionIndex++;
+            updateCurrentQuestion();
+            
+            isProcessing = false;
+        }
+
+        function addMessage(type, text, container) {
+            return new Promise(resolve => {
+                const div = document.createElement('div');
+                div.className = `message ${type}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.textContent = type === 'user' ? '🙂' : '🤖';
+                
+                const content = document.createElement('div');
+                content.className = 'message-content';
+                content.textContent = text;
+                
+                div.appendChild(avatar);
+                div.appendChild(content);
+                container.appendChild(div);
+                
+                // 滚动到底部
+                container.scrollTop = container.scrollHeight;
+                
+                // 动画完成后resolve
+                setTimeout(resolve, 300);
+            });
+        }
+
+        function addTypingIndicator(container) {
+            const id = 'typing-' + Date.now();
+            const div = document.createElement('div');
+            div.className = 'message ai';
+            div.id = id;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.textContent = '🤖';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content typing-indicator';
+            content.innerHTML = '<span></span><span></span><span></span>';
+            
+            div.appendChild(avatar);
+            div.appendChild(content);
+            container.appendChild(div);
+            
+            container.scrollTop = container.scrollHeight;
+            
+            return id;
+        }
+
+        function removeTypingIndicator(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function restart() {
+            selectedAIType = '';
+            currentQuestionIndex = 0;
+            isProcessing = false;
+            document.querySelectorAll('.ai-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.getElementById('step2Btn').disabled = true;
+            document.getElementById('progressFill').style.width = '33.33%';
+            goToStep(1);
+        }
+    </script>
+</body>
+</html>
